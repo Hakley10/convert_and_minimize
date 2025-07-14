@@ -8,20 +8,17 @@ def main():
     
     while True:
         print("\nAutomata Toolkit")
-        print("1. List NFAs")
-        print("2. Convert NFA to DFA")
-        print("3. Minimize DFA")
-        print("4. Exit")
+        print("1. Convert NFA to DFA")
+        print("2. Minimize DFA")
+        print("3. Exit")
         
         choice = input("Select option: ").strip()
         
         if choice == '1':
-            list_nfas(db)
-        elif choice == '2':
             convert_nfa(db)
-        elif choice == '3':
+        elif choice == '2':
             minimize_dfa_interactive(db)
-        elif choice == '4':
+        elif choice == '3':
             break
         else:
             print("Invalid choice")
@@ -59,14 +56,66 @@ def convert_nfa(db: AutomataDB):
             states, start, finals, transitions)
         
         print_automaton(dfa_states, dfa_start, dfa_finals, dfa_trans, "Converted DFA")
-        display_automaton(dfa_states, dfa_start, dfa_finals, dfa_trans, "DFA")
+        
+        show_png = input("Would you like to show the visualization? (y/n): ").lower()
+        if show_png == 'y':
+            display_automaton(dfa_states, dfa_start, dfa_finals, dfa_trans, "DFA")
+            
+        save = input("Would you like to save this DFA? (y/n): ").lower()
+        if save == 'y':
+            name = input("Enter a name for this DFA: ")
+            db.save_dfa(name, dfa_states, dfa_start, dfa_finals, dfa_trans, nfa_id)
+            print("DFA saved successfully!")
         
     except ValueError:
         print("Please enter a valid number")
 
 def minimize_dfa_interactive(db: AutomataDB):
-    # Similar to convert_nfa but starts with a DFA
-    pass
+    dfas = db.fetch_dfas()
+    if not dfas:
+        print("No DFAs found in database. Would you like to convert an NFA to DFA first?")
+        choice = input("Enter 'y' to convert NFA to DFA or any key to cancel: ").lower()
+        if choice == 'y':
+            convert_nfa(db)
+        return
+    
+    print("\nAvailable DFAs:")
+    for id, name in dfas:
+        print(f"{id}. {name}")
+    
+    try:
+        dfa_id = int(input("\nSelect DFA ID to minimize: "))
+        states, start, finals, transitions = db.fetch_dfa(dfa_id)
+        
+        if not states:
+            print("Invalid DFA selected")
+            return
+        
+        # Convert to frozen sets for minimization
+        frozen_states = {frozenset({s}) for s in states}
+        frozen_start = frozenset({start})
+        frozen_finals = {frozenset({f}) for f in finals}
+        frozen_transitions = {(frozenset({f}), s): frozenset({t}) 
+                            for (f, s), t in transitions.items()}
+        
+        print("\nMinimizing DFA...")
+        min_states, min_start, min_finals, min_trans = minimize_dfa(
+            frozen_states, frozen_start, frozen_finals, frozen_transitions)
+        
+        print_automaton(min_states, min_start, min_finals, min_trans, "Minimized DFA")
+        
+        show_png = input("Would you like to show the visualization? (y/n): ").lower()
+        if show_png == 'y':
+            display_automaton(min_states, min_start, min_finals, min_trans, "Minimized_DFA")
+        
+        save = input("Would you like to save this minimized DFA? (y/n): ").lower()
+        if save == 'y':
+            name = input("Enter a name for this minimized DFA: ")
+            db.save_dfa(name, min_states, min_start, min_finals, min_trans)
+            print("Minimized DFA saved successfully!")
+        
+    except ValueError:
+        print("Please enter a valid number")
 
 if __name__ == "__main__":
     main()
