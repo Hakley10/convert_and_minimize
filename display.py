@@ -1,5 +1,4 @@
 from typing import Dict, Tuple, FrozenSet, Set, Optional, Any
-from collections import defaultdict
 
 # Conditional import and type handling
 GRAPHVIZ_AVAILABLE = False
@@ -27,7 +26,7 @@ def display_automaton(
         
     try:
         dot = Digraph(format='png')
-        dot.attr(rankdir='LR', label=f"{name}\n(States: {len(states)}, Transitions: {len(transitions)})")
+        dot.attr(rankdir='LR', label=f"{name}\\n(States: {len(states)}, Transitions: {len(transitions)})")
         
         # Add states
         for state in states:

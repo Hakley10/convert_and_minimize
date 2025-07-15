@@ -1,4 +1,4 @@
-from collections import deque, defaultdict
+from collections import deque
 from typing import Set, Dict, FrozenSet, Tuple
 
 def epsilon_closure(states: Set[str], transitions: Dict[str, Dict[str, Set[str]]]) -> FrozenSet[str]:
@@ -41,8 +41,8 @@ def convert_nfa_to_dfa(
         
         # Find all unique symbols (excluding epsilon)
         symbols = {sym for state in current 
-                  for sym in transitions.get(state, {}).keys()
-                  if sym != 'ε'}
+                    for sym in transitions.get(state, {}).keys()
+                    if sym != 'ε'}
         
         for sym in symbols:
             next_states = set()

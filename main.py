@@ -1,10 +1,35 @@
-from database import AutomataDB
+from database import AutomataDB, insert_sample_nfas
 from nfa_to_dfa import convert_nfa_to_dfa
 from dfa_minimizer import minimize_dfa
 from display import display_automaton, print_automaton
+from typing import Set, Dict, Tuple
+
+# Helper function to print NFA details
+def print_nfa(
+    states: Set[str],
+    start: str,
+    finals: Set[str],
+    transitions: Dict[str, Dict[str, Set[str]]],
+    title: str = "NFA"
+) -> None:
+    """Print NFA details to console."""
+    print(f"\n{title} Summary:")
+    print(f"States ({len(states)}):", ", ".join(sorted(states)))
+    print("Start State:", start)
+    print(f"Final States ({len(finals)}):", ", ".join(sorted(finals)))
+    print("\nTransitions:")
+    
+    # Sort transitions for consistent output
+    sorted_transitions = sorted(transitions.items(), key=lambda item: item[0])
+    
+    for from_state, sym_trans in sorted_transitions:
+        for symbol, to_states in sorted(sym_trans.items()):
+            print(f"{{ {from_state} }} --[{symbol}]--> {{ {', '.join(sorted(to_states))} }}")
 
 def main():
     db = AutomataDB()
+    # Check for and insert sample NFAs if the database is empty.
+    insert_sample_nfas(db)
     
     while True:
         print("\nAutomata Toolkit")
@@ -50,6 +75,9 @@ def convert_nfa(db: AutomataDB):
         if not states:
             print("Invalid NFA selected")
             return
+            
+        # Display the selected NFA before conversion
+        print_nfa(states, start, finals, transitions, f"Selected NFA ID {nfa_id}")
         
         print("\nConverting NFA to DFA...")
         dfa_states, dfa_start, dfa_finals, dfa_trans = convert_nfa_to_dfa(
