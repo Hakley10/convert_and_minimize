@@ -1,1 +1,1 @@
-# convert_and_minimize
+# automata_v3

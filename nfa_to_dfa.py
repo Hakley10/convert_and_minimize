@@ -1,5 +1,7 @@
 from collections import deque
 from typing import Set, Dict, FrozenSet, Tuple
+import json
+from display import display_automaton, print_automaton
 
 def epsilon_closure(states: Set[str], transitions: Dict[str, Dict[str, Set[str]]]) -> FrozenSet[str]:
     closure = set(states)
@@ -7,7 +9,7 @@ def epsilon_closure(states: Set[str], transitions: Dict[str, Dict[str, Set[str]]
     
     while queue:
         state = queue.popleft()
-        for to_state in transitions.get(state, {}).get('ε', set()):
+        for to_state in transitions.get(state, {}).get('e', set()):
             if to_state not in closure:
                 closure.add(to_state)
                 queue.append(to_state)
@@ -42,7 +44,7 @@ def convert_nfa_to_dfa(
         # Find all unique symbols (excluding epsilon)
         symbols = {sym for state in current 
                     for sym in transitions.get(state, {}).keys()
-                    if sym != 'ε'}
+                    if sym != 'e'}
         
         for sym in symbols:
             next_states = set()
@@ -57,3 +59,31 @@ def convert_nfa_to_dfa(
                     queue.append(next_closure)
     
     return dfa_states, initial_state, dfa_finals, dfa_transitions
+
+if __name__ == "__main__":
+    with open("nfa_input.json") as f:
+        data = json.load(f)
+    states = set(data["states"])
+    start = data["startState"]
+    finals = set(data["acceptingStates"])
+    transitions = {}
+    for from_state, symbol, to_state in data["transitions"]:
+        if from_state not in transitions:
+            transitions[from_state] = {}
+        if symbol not in transitions[from_state]:
+            transitions[from_state][symbol] = set()
+        transitions[from_state][symbol].add(to_state)
+    dfa_states, initial_state, dfa_finals, dfa_transitions = convert_nfa_to_dfa(states, start, finals, transitions) 
+    result = {
+        "states": [list(s) for s in dfa_states],
+        "startState": list(initial_state),
+        "acceptingStates": [list(s) for s in dfa_finals],
+        "transitions": [
+            {"from": list(k[0]), "symbol": k[1], "to": list(v)}
+            for k, v in dfa_transitions.items()
+        ]
+    }  
+    with open("dfa_output.json", "w") as f:
+        json.dump(result, f, indent=2)
+    print("Converted NFA to DFA successfully!")
+    print_automaton(dfa_states, initial_state, dfa_finals, dfa_transitions, "Converted DFA")    

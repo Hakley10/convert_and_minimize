@@ -1,6 +1,12 @@
 from typing import Set, Dict, Tuple, FrozenSet
 from collections import defaultdict
+import json
+from display import display_automaton, print_automaton
 
+def frozenset_to_list(obj):
+    if isinstance(obj, frozenset) or isinstance(obj, set):
+        return [frozenset_to_list(e) for e in obj]
+    return obj
 def minimize_dfa(
     states: Set[FrozenSet[str]],
     start: FrozenSet[str],
@@ -62,3 +68,32 @@ def minimize_dfa(
     new_finals = {state_map[state] for state in finals}
     
     return set(partitions), new_start, new_finals, new_transitions
+
+if __name__ == "__main__":
+    with open("dfa_input.json") as f:
+        data = json.load(f)
+    states = set(data["states"])    
+    start = data["startState"]
+    finals = set(data["acceptingStates"])
+    transitions = {}
+    for from_state, symbol, to_state in data["transitions"]:
+        transitions[(frozenset({from_state}), symbol)] = frozenset({to_state})
+
+    frozen_states = {frozenset({s}) for s in states}
+    frozen_start = frozenset({start})
+    frozen_finals = {frozenset({f}) for f in finals}
+    partitions, new_start, new_finals, new_transitions = minimize_dfa(frozen_states, frozen_start, frozen_finals, transitions)
+    result = {
+        "states": [frozenset_to_list(s) for s in partitions],
+        "startState": frozenset_to_list(new_start),
+        "acceptingStates": [frozenset_to_list(s) for s in new_finals],
+        "transitions": [
+            {"from": frozenset_to_list(k[0]), "symbol": k[1], "to": frozenset_to_list(v)}
+            for k, v in new_transitions.items()
+        ]
+    }
+    with open("minimized.json", "w") as f:
+        json.dump(result, f, indent=4)
+    print_automaton(partitions, new_start, new_finals, new_transitions, "Minimized DFA")
+    print("DFA minimized successfully!")
+    
